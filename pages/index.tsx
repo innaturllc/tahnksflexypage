@@ -130,7 +130,8 @@ export default function ThankYou() {
               placeholder="you@example.com"
               style={{
                 width: "100%",
-                paddingVertical: 12,
+                padding-top: 12,
+                padding-bottom: 12,
                 borderRadius: 10,
                 border: "1px solid #ddd",
                 outline: "none",
@@ -150,7 +151,8 @@ export default function ThankYou() {
               placeholder="minimum 6 characters"
               style={{
                 width: "100%",
-                paddingVertical: 12,
+                padding-top: 12,
+                padding-bottom: 12,
                 borderRadius: 10,
                 border: "1px solid #ddd",
                 outline: "none",
