@@ -1,3 +1,4 @@
+// pages/index.tsx
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -129,7 +130,7 @@ export default function ThankYou() {
               placeholder="you@example.com"
               style={{
                 width: "100%",
-                padding: 12,
+                paddingVertical: 12,
                 borderRadius: 10,
                 border: "1px solid #ddd",
                 outline: "none",
@@ -149,7 +150,7 @@ export default function ThankYou() {
               placeholder="minimum 6 characters"
               style={{
                 width: "100%",
-                padding: 12,
+                paddingVertical: 12,
                 borderRadius: 10,
                 border: "1px solid #ddd",
                 outline: "none",
