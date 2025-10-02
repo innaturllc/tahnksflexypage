@@ -62,14 +62,15 @@ export default function ThankYou() {
       setUserId(uid);
 
       // 4) Mint short-lived token via Supabase Edge Function
-      const res = await fetch(mintTokenUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: uid }),
-      });
-      if (!res.ok) throw new Error(`Token API failed: ${res.status}`);
-      const { token: t } = (await res.json()) as TokenResponse;
-      setToken(t);
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "mint-app-link-token",
+        {
+          body: { userId: uid },
+        }
+      );
+
+      if (fnError) throw new Error(`Token API failed: ${fnError.message}`);
+      setToken((data as { token: string }).token);
     } catch (err: any) {
       setError(err?.message ?? "Something went wrong");
     } finally {
