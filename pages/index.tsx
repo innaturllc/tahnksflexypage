@@ -7,9 +7,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const mintTokenUrl = process.env.MINT_SHORT_TOKEN_URL!;
-const projectUrl = process.env.VERCEL_PROJECT_URL!;
-
 type TokenResponse = { token: string; expiresAt: string };
 
 export default function ThankYou() {
@@ -79,7 +76,7 @@ export default function ThankYou() {
   };
 
   const appUniversalLink = token
-    ? `${projectUrl}/app-link?token=${encodeURIComponent(token)}`
+    ? `${window.location.origin}/app-link?token=${encodeURIComponent(token)}`
     : null;
 
   return (
