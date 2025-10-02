@@ -1,4 +1,3 @@
-// pages/thank-you.tsx
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -17,10 +16,8 @@ export default function ThankYou() {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // optional: capture UTM/click ids from the URL for attribution
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    // persist to your backend if you want (not shown)
     console.debug("UTMs:", {
       utm_source: params.get("utm_source"),
       utm_medium: params.get("utm_medium"),
@@ -34,36 +31,29 @@ export default function ThankYou() {
     setError(null);
     setLoading(true);
     try {
-      // Try sign in first (user may already exist), otherwise sign up.
-      let { data: signIn, error: signInErr } =
-        await supabase.auth.signInWithPassword({ email, password });
-      if (signInErr) {
-        const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            // If you want to use email confirmations on web:
-            // emailRedirectTo: `${window.location.origin}/welcome`
-          },
-        });
-        if (signUpErr) throw signUpErr;
-        signIn = signUp;
+      // try sign-in, then sign-up fallback
+      const signIn = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (signIn.error) {
+        const signUp = await supabase.auth.signUp({ email, password });
+        if (signUp.error) throw signUp.error;
       }
 
-      // At this point we have a session user
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("No Supabase user after auth.");
-      setUserId(user.id);
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) throw new Error("No Supabase user after auth.");
+      setUserId(userData.user.id);
 
-      // Ask your API to mint a short-lived deep-link token for this user
-      const res = await fetch("/api/mint-app-link-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ userId: user.id }),
-      });
+      // call your Supabase Edge Function to mint token
+      const res = await fetch(
+        "https://<PROJECT>.supabase.co/functions/v1/mint-app-link-token",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: userData.user.id }),
+        }
+      );
       if (!res.ok) throw new Error(`Token API failed: ${res.status}`);
       const { token: t } = (await res.json()) as TokenResponse;
       setToken(t);
