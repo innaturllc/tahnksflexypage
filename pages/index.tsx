@@ -7,15 +7,14 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// App Store URL (change if needed). If you also want Android later,
-// add a second button with your Play Store link.
-const APP_STORE_URL = "https://apps.apple.com/app/6747302282";
+type TokenResponse = { token: string; expiresAt: string };
 
 export default function ThankYou() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -35,28 +34,50 @@ export default function ThankYou() {
     setError(null);
     setLoading(true);
     try {
-      // Try sign-in first
+      // 1) Try sign-in
+      let uid: string | undefined;
       const signIn = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (signIn.error) {
-        // Fallback to sign-up
+      if (!signIn.error) {
+        uid = signIn.data.user?.id;
+      } else {
+        // 2) Fallback to sign-up
         const signUp = await supabase.auth.signUp({ email, password });
         if (signUp.error) throw signUp.error;
-        setUserId(signUp.data.user?.id ?? null);
-      } else {
-        setUserId(signIn.data.user?.id ?? null);
+        uid = signUp.data.user?.id;
       }
 
-      // Optional: you could POST UTMs + userId to your backend here for attribution
+      // 3) If uid still not present, ask Supabase for current user
+      if (!uid) {
+        const { data } = await supabase.auth.getUser();
+        uid = data.user?.id;
+      }
+      if (!uid) throw new Error("Could not determine user id after auth.");
+      setUserId(uid);
+
+      // 4) Mint short-lived token via Supabase Edge Function
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "mint-app-link-token",
+        {
+          body: { userId: uid },
+        }
+      );
+
+      if (fnError) throw new Error(`Token API failed: ${fnError.message}`);
+      setToken((data as { token: string }).token);
     } catch (err: any) {
       setError(err?.message ?? "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
+
+  const appUniversalLink = token
+    ? `${window.location.origin}/app-link?token=${encodeURIComponent(token)}`
+    : null;
 
   return (
     <div
@@ -81,8 +102,7 @@ export default function ThankYou() {
         }}>
         <h1 style={{ margin: 0, fontSize: 28 }}>🎉 Payment successful</h1>
         <p style={{ marginTop: 8, color: "#444" }}>
-          Create your account so you can sign in inside the app and unlock
-          premium.
+          Finish setting up your account so we can unlock premium in the app.
         </p>
 
         <form
@@ -160,7 +180,7 @@ export default function ThankYou() {
           )}
         </form>
 
-        {userId && (
+        {userId && token && (
           <div
             style={{
               marginTop: 24,
@@ -171,7 +191,7 @@ export default function ThankYou() {
             }}>
             <h3 style={{ marginTop: 0 }}>Open the app</h3>
             <p style={{ marginTop: 4, color: "#444" }}>
-              Install the app and sign in with the same email to unlock premium.
+              We’ll unlock premium automatically.
             </p>
 
             <div
@@ -182,7 +202,7 @@ export default function ThankYou() {
                 flexWrap: "wrap",
               }}>
               <a
-                href={APP_STORE_URL}
+                href={"https://apps.apple.com/app/6747302282"}
                 style={{
                   padding: "10px 14px",
                   borderRadius: 10,
@@ -191,26 +211,13 @@ export default function ThankYou() {
                   textDecoration: "none",
                   fontWeight: 600,
                 }}>
-                Open in App (App Store)
+                Open in App
               </a>
-
-              {/* If you want Android too:
-              <a
-                href="https://play.google.com/store/apps/details?id=com.yourcompany.flexy"
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  background: "#334155",
-                  color: "#fff",
-                  textDecoration: "none",
-                  fontWeight: 600,
-                }}>
-                Open in App (Play Store)
-              </a> */}
             </div>
 
             <p style={{ marginTop: 10, fontSize: 13, color: "#555" }}>
-              After installing, open the app and sign in with the same email.
+              If nothing happens, install the app from the store, then tap the
+              same button again.
             </p>
           </div>
         )}
