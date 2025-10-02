@@ -78,9 +78,8 @@ export default function ThankYou() {
   };
 
   const appUniversalLink = token
-  ? `${projectUrl}/app-link?token=${encodeURIComponent(token)}`
-  : null;
-
+    ? `${projectUrl}/app-link?token=${encodeURIComponent(token)}`
+    : null;
 
   return (
     <div
@@ -128,8 +127,8 @@ export default function ThankYou() {
               placeholder="you@example.com"
               style={{
                 width: "100%",
-                padding-top: 12,
-                padding-bottom: 12,
+                paddingTop: 12,
+                paddingBottom: 12,
                 borderRadius: 10,
                 border: "1px solid #ddd",
                 outline: "none",
@@ -149,8 +148,8 @@ export default function ThankYou() {
               placeholder="minimum 6 characters"
               style={{
                 width: "100%",
-                padding-top: 12,
-                padding-bottom: 12,
+                paddingTop: 12,
+                paddingBottom: 12,
                 borderRadius: 10,
                 border: "1px solid #ddd",
                 outline: "none",
