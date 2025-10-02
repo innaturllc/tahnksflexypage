@@ -77,7 +77,9 @@ export default function ThankYou() {
     }
   };
 
-  const appUniversalLink = `${projectUrl}/app-link?token=${encodeURIComponent(token)}`
+  const appUniversalLink = token
+  ? `${projectUrl}/app-link?token=${encodeURIComponent(token)}`
+  : null;
 
 
   return (
