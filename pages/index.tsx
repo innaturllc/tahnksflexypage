@@ -8,6 +8,7 @@ const supabase = createClient(
 );
 
 const mintTokenUrl = process.env.MINT_SHORT_TOKEN_URL!;
+const projectUrl = process.env.VERCEL_PROJECT_URL!;
 
 type TokenResponse = { token: string; expiresAt: string };
 
@@ -76,13 +77,8 @@ export default function ThankYou() {
     }
   };
 
-  const appUniversalLink = token
-    ? `https://yourdomain.com/app-link?token=${encodeURIComponent(token)}`
-    : undefined;
+  const appUniversalLink = `${projectUrl}/app-link?token=${encodeURIComponent(token)}`
 
-  const appCustomScheme = token
-    ? `flexy://onboard/complete?token=${encodeURIComponent(token)}`
-    : undefined;
 
   return (
     <div
@@ -216,19 +212,7 @@ export default function ThankYou() {
                   textDecoration: "none",
                   fontWeight: 600,
                 }}>
-                Open in App (Universal Link)
-              </a>
-              <a
-                href={appCustomScheme!}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  background: "#334155",
-                  color: "#fff",
-                  textDecoration: "none",
-                  fontWeight: 600,
-                }}>
-                Open (Scheme Fallback)
+                Open in App
               </a>
             </div>
 
