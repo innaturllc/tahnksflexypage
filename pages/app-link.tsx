@@ -13,7 +13,7 @@ export default function AppLink() {
     window.location.href = scheme;
     // fallback to stores after a short delay
     const t = setTimeout(() => {
-      window.location.href = "https://apps.apple.com/app/your-app-id"; // or dynamic store link
+      window.location.href = "https://apps.apple.com/app/6747302282"; // or dynamic store link
     }, 1500);
     return () => clearTimeout(t);
   }, [router.query.token]);
