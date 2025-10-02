@@ -75,10 +75,6 @@ export default function ThankYou() {
     }
   };
 
-  const appUniversalLink = token
-    ? `${window.location.origin}/app-link?token=${encodeURIComponent(token)}`
-    : null;
-
   return (
     <div
       style={{
