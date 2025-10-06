@@ -193,10 +193,10 @@ export default function ThankYou() {
             {(() => {
               // Preserve marketing params
               const params = new URLSearchParams(window.location.search);
-              params.set("user_id", userId);
+              params.set("app_user_id", userId);
 
               const appStoreBase =
-                "https://apps.apple.com/us/app/flexy-pilates-home-workout/id6747302282";
+                "https://flexy-pilates.superwall.app/afterOnboardingPaywall";
 
               const fullUrl = `${appStoreBase}?${params.toString()}`;
 
