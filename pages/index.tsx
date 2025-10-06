@@ -166,7 +166,7 @@ export default function ThankYou() {
               marginTop: 4,
             }}
             aria-busy={loading}>
-            {loading ? "Working…" : "Create account / Sign in"}
+            {loading ? "Preparing…" : "Create account / Sign in"}
           </button>
 
           {error && (
@@ -176,7 +176,7 @@ export default function ThankYou() {
           )}
         </form>
 
-        {userId && token && (
+        {userId && (
           <div
             style={{
               marginTop: 24,
@@ -190,31 +190,41 @@ export default function ThankYou() {
               We’ll unlock premium automatically.
             </p>
 
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                marginTop: 8,
-                flexWrap: "wrap",
-              }}>
-              <a
-                href={`https://flexy-pilates.superwall.app/afterOnboardingPaywall?app_user_id=${userId}&fbclid=${fbclid}`}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  background: "#0f766e",
-                  color: "#fff",
-                  textDecoration: "none",
-                  fontWeight: 600,
-                }}>
-                Let's Get Started
-              </a>
-            </div>
+            {(() => {
+              // Preserve marketing params
+              const params = new URLSearchParams(window.location.search);
+              params.set("user_id", userId);
 
-            {/* <p style={{ marginTop: 10, fontSize: 13, color: "#555" }}>
-              If nothing happens, install the app from the store, then tap the
-              same button again.
-            </p> */}
+              const appStoreBase =
+                "https://apps.apple.com/us/app/flexy-pilates-home-workout/id6747302282";
+
+              const fullUrl = `${appStoreBase}?${params.toString()}`;
+
+              return (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    marginTop: 8,
+                    flexWrap: "wrap",
+                  }}>
+                  <a
+                    href={fullUrl}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      background: "#0f766e",
+                      color: "#fff",
+                      textDecoration: "none",
+                      fontWeight: 600,
+                    }}
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    Let's get Started!
+                  </a>
+                </div>
+              );
+            })()}
           </div>
         )}
       </main>
