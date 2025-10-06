@@ -58,16 +58,16 @@ export default function ThankYou() {
       if (!uid) throw new Error("Could not determine user id after auth.");
       setUserId(uid);
 
-      // 4) Mint short-lived token via Supabase Edge Function
-      const { data, error: fnError } = await supabase.functions.invoke(
-        "mint-app-link-token",
-        {
-          body: { userId: uid },
-        }
-      );
+      // // 4) Mint short-lived token via Supabase Edge Function
+      // const { data, error: fnError } = await supabase.functions.invoke(
+      //   "mint-app-link-token",
+      //   {
+      //     body: { userId: uid },
+      //   }
+      // );
 
-      if (fnError) throw new Error(`Token API failed: ${fnError.message}`);
-      setToken((data as { token: string }).token);
+      // if (fnError) throw new Error(`Token API failed: ${fnError.message}`);
+      // setToken((data as { token: string }).token);
     } catch (err: any) {
       setError(err?.message ?? "Something went wrong");
     } finally {
@@ -198,7 +198,7 @@ export default function ThankYou() {
                 flexWrap: "wrap",
               }}>
               <a
-                href={"https://apps.apple.com/app/6747302282"}
+                href={`https://flexy-pilates.superwall.app/afterOnboardingPaywall?app_user_id=${userId}&fbclid=${fbclid}`}
                 style={{
                   padding: "10px 14px",
                   borderRadius: 10,
@@ -207,14 +207,14 @@ export default function ThankYou() {
                   textDecoration: "none",
                   fontWeight: 600,
                 }}>
-                Open in App
+                Let's Get Started
               </a>
             </div>
 
-            <p style={{ marginTop: 10, fontSize: 13, color: "#555" }}>
+            {/* <p style={{ marginTop: 10, fontSize: 13, color: "#555" }}>
               If nothing happens, install the app from the store, then tap the
               same button again.
-            </p>
+            </p> */}
           </div>
         )}
       </main>
