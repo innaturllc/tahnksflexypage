@@ -272,10 +272,12 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const APP_LINK_BASE =
+  "https://flexy-pilates.superwall.app/afterOnboardingPaywall";
+
 type TokenResponse = { token: string; expiresAt: string };
 
 export default function ThankYou() {
-  // ── State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -283,6 +285,7 @@ export default function ThankYou() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [queryString, setQueryString] = useState<string>(""); // ✅ client-only query
   const [attribution, setAttribution] = useState({
     fbc: null as string | null,
     fbp: null as string | null,
@@ -291,9 +294,13 @@ export default function ThankYou() {
     utm_campaign: null as string | null,
   });
 
-  // ── Attribution from query
+  // ── Client-only: read URL params and build attribution
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    if (typeof window === "undefined") return;
+    const qs = window.location.search || "";
+    setQueryString(qs);
+
+    const params = new URLSearchParams(qs);
     const fbclid = params.get("fbclid");
     const ts = Date.now();
 
@@ -317,16 +324,14 @@ export default function ThankYou() {
     });
   }, []);
 
-  // ── Build deep link with preserved params
+  // ── Build deep link safely (no window during SSR)
   const startUrl = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(queryString || "");
     if (userId) params.set("app_user_id", userId);
-    const appStoreBase =
-      "https://flexy-pilates.superwall.app/afterOnboardingPaywall";
-    return `${appStoreBase}?${params.toString()}`;
-  }, [userId]);
+    const qs = params.toString();
+    return qs ? `${APP_LINK_BASE}?${qs}` : APP_LINK_BASE;
+  }, [queryString, userId]);
 
-  // ── Auth submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || loading) return;
@@ -334,8 +339,8 @@ export default function ThankYou() {
     setError(null);
     setLoading(true);
     try {
-      // 1) Try sign-in
       let uid: string | undefined;
+
       const signIn = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -343,13 +348,11 @@ export default function ThankYou() {
       if (!signIn.error) {
         uid = signIn.data.user?.id;
       } else {
-        // 2) Fallback to sign-up
         const signUp = await supabase.auth.signUp({ email, password });
         if (signUp.error) throw signUp.error;
         uid = signUp.data.user?.id;
       }
 
-      // 3) If uid still not present, ask Supabase for current user
       if (!uid) {
         const { data } = await supabase.auth.getUser();
         uid = data.user?.id;
@@ -357,7 +360,6 @@ export default function ThankYou() {
       if (!uid) throw new Error("Could not determine user id after auth.");
       setUserId(uid);
 
-      // 4) Persist attribution
       await supabase.from("ad_attribution").upsert({
         user_id: uid,
         fbc: attribution.fbc,
@@ -367,7 +369,7 @@ export default function ThankYou() {
         utm_campaign: attribution.utm_campaign,
       });
 
-      // // 5) Optionally mint short-lived token
+      // // Optional token:
       // const { data, error: fnError } = await supabase.functions.invoke(
       //   "mint-app-link-token",
       //   { body: { userId: uid } }
@@ -381,12 +383,9 @@ export default function ThankYou() {
     }
   };
 
-  // ── UI
   return (
     <div style={styles.shell}>
-      {/* Background accent */}
       <div style={styles.bgBlob} aria-hidden />
-
       <main style={styles.card}>
         <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={styles.emojiBadge} aria-hidden>
@@ -402,7 +401,6 @@ export default function ThankYou() {
           </div>
         </header>
 
-        {/* SUCCESS STATE — replaces inputs once userId exists */}
         {userId ? (
           <section style={{ marginTop: 16 }}>
             <div style={styles.successBox}>
@@ -414,10 +412,7 @@ export default function ThankYou() {
 
             <a
               href={startUrl}
-              style={{
-                ...styles.primaryBtn,
-                marginTop: 16,
-              }}
+              style={{ ...styles.primaryBtn, marginTop: 16 }}
               target="_blank"
               rel="noopener noreferrer">
               Let’s get started
@@ -434,7 +429,6 @@ export default function ThankYou() {
             </p>
           </section>
         ) : (
-          // FORM STATE — shown until we have userId
           <form onSubmit={handleSubmit} style={styles.form}>
             <label style={styles.label}>
               <span style={styles.labelText}>Email</span>
@@ -499,7 +493,6 @@ export default function ThankYou() {
           </form>
         )}
 
-        {/* Optional token debug (kept for parity) */}
         {token && (
           <details style={{ marginTop: 12 }}>
             <summary>Debug token</summary>
@@ -517,9 +510,6 @@ export default function ThankYou() {
   );
 }
 
-// ───────────────────────────────────────────
-// Styles (mobile-first, tap-friendly, subtle glow)
-// ───────────────────────────────────────────
 const styles: Record<string, React.CSSProperties> = {
   shell: {
     minHeight: "100svh",
@@ -562,12 +552,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   h1: { margin: 0, fontSize: 24, lineHeight: 1.2 },
   subtle: { margin: 6, marginLeft: 0, color: "#475569", fontSize: 14 },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    marginTop: 16,
-  },
+  form: { display: "flex", flexDirection: "column", gap: 12, marginTop: 16 },
   label: { display: "block" },
   labelText: {
     display: "block",
@@ -650,7 +635,7 @@ const styles: Record<string, React.CSSProperties> = {
   footerText: { color: "#94a3b8", fontSize: 12, textAlign: "center" },
 };
 
-// Focus ring (quick and accessible)
+// Add a focus style only in the browser
 if (typeof document !== "undefined") {
   const styleTagId = "focus-ring-style";
   if (!document.getElementById(styleTagId)) {
