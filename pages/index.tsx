@@ -391,6 +391,7 @@
 // pages/index.tsx
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import mod from "mixpanel-browser";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -405,26 +406,19 @@ type TokenResponse = { token: string; expiresAt: string };
 // ───────────────────────────────────────────
 // Mixpanel (browser) - safe, lazy client init
 // ───────────────────────────────────────────
-let mp: typeof import("mixpanel-browser") | null = null;
 
 async function ensureMixpanel() {
-  if (typeof window === "undefined") return null; // SSR guard
-  if (mp) return mp;
-  const mod = await import("mixpanel-browser");
   const token = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN || "";
   if (!token) {
     if (process.env.NODE_ENV !== "production") {
       console.warn("[Mixpanel] Missing NEXT_PUBLIC_MIXPANEL_TOKEN");
     }
-    mp = mod; // still set to avoid re-import loops
-    return mp;
   }
   mod.init(token, {
     debug: process.env.NODE_ENV !== "production",
-    track_pageview: false,
+    track_pageview: true,
   });
-  mp = mod;
-  return mp;
+  return mod;
 }
 
 export default function ThankYou() {
@@ -514,7 +508,14 @@ export default function ThankYou() {
       }
       if (!uid) throw new Error("Could not determine user id after auth.");
       setUserId(uid);
-
+      await supabase.from("ad_attribution").upsert({
+        user_id: uid,
+        fbc: attribution.fbc,
+        fbp: attribution.fbp,
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+      });
       // ── Mixpanel: identify by user_id and track Signup Attempt
       const m = await ensureMixpanel();
       if (m) {
@@ -539,15 +540,6 @@ export default function ThankYou() {
           }
         }
       }
-
-      await supabase.from("ad_attribution").upsert({
-        user_id: uid,
-        fbc: attribution.fbc,
-        fbp: attribution.fbp,
-        utm_source: attribution.utm_source,
-        utm_medium: attribution.utm_medium,
-        utm_campaign: attribution.utm_campaign,
-      });
 
       // // Optional token:
       // const { data, error: fnError } = await supabase.functions.invoke(
