@@ -1,5 +1,270 @@
+// // pages/index.tsx
+// import { useEffect, useState } from "react";
+// import { createClient } from "@supabase/supabase-js";
+
+// const supabase = createClient(
+//   process.env.NEXT_PUBLIC_SUPABASE_URL!,
+//   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// );
+
+// type TokenResponse = { token: string; expiresAt: string };
+
+// export default function ThankYou() {
+//   const [email, setEmail] = useState("");
+//   const [password, setPassword] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState<string | null>(null);
+//   const [token, setToken] = useState<string | null>(null);
+//   const [userId, setUserId] = useState<string | null>(null);
+//   const [attribution, setAttribution] = useState({
+//     fbc: null as string | null,
+//     fbp: null as string | null,
+//     utm_source: null as string | null,
+//     utm_medium: null as string | null,
+//     utm_campaign: null as string | null,
+//   });
+
+//   useEffect(() => {
+//     const params = new URLSearchParams(window.location.search);
+//     const fbclid = params.get("fbclid");
+//     const ts = Date.now();
+
+//     const fbc = fbclid ? `fb.1.${ts}.${fbclid}` : null;
+//     const fbp = `fb.1.${ts}.${Math.floor(Math.random() * 1e16)}`;
+
+//     setAttribution({
+//       fbc,
+//       fbp,
+//       utm_source: params.get("utm_source"),
+//       utm_medium: params.get("utm_medium"),
+//       utm_campaign: params.get("utm_campaign"),
+//     });
+
+//     console.debug("Attribution info:", {
+//       fbc,
+//       fbp,
+//       utm_source: params.get("utm_source"),
+//       utm_medium: params.get("utm_medium"),
+//       utm_campaign: params.get("utm_campaign"),
+//     });
+//   }, []);
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     if (!email || !password) return;
+
+//     setError(null);
+//     setLoading(true);
+//     try {
+//       // 1) Try sign-in
+//       let uid: string | undefined;
+//       const signIn = await supabase.auth.signInWithPassword({
+//         email,
+//         password,
+//       });
+
+//       if (!signIn.error) {
+//         uid = signIn.data.user?.id;
+//       } else {
+//         // 2) Fallback to sign-up
+//         const signUp = await supabase.auth.signUp({ email, password });
+//         if (signUp.error) throw signUp.error;
+//         uid = signUp.data.user?.id;
+//       }
+
+//       // 3) If uid still not present, ask Supabase for current user
+//       if (!uid) {
+//         const { data } = await supabase.auth.getUser();
+//         uid = data.user?.id;
+//       }
+//       if (!uid) throw new Error("Could not determine user id after auth.");
+//       setUserId(uid);
+
+//       await supabase.from("ad_attribution").upsert({
+//         user_id: uid,
+//         fbc: attribution.fbc,
+//         fbp: attribution.fbp,
+//         utm_source: attribution.utm_source,
+//         utm_medium: attribution.utm_medium,
+//         utm_campaign: attribution.utm_campaign,
+//       });
+
+//       // // 4) Mint short-lived token via Supabase Edge Function
+//       // const { data, error: fnError } = await supabase.functions.invoke(
+//       //   "mint-app-link-token",
+//       //   {
+//       //     body: { userId: uid },
+//       //   }
+//       // );
+
+//       // if (fnError) throw new Error(`Token API failed: ${fnError.message}`);
+//       // setToken((data as { token: string }).token);
+//     } catch (err: any) {
+//       setError(err?.message ?? "Something went wrong");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div
+//       style={{
+//         minHeight: "100svh",
+//         display: "grid",
+//         placeItems: "center",
+//         padding: 16,
+//         background: "#fafafa",
+//         fontFamily:
+//           "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+//       }}>
+//       <main
+//         style={{
+//           width: "100%",
+//           maxWidth: 520,
+//           background: "#fff",
+//           border: "1px solid #eee",
+//           borderRadius: 14,
+//           padding: 24,
+//           boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)",
+//         }}>
+//         <h1 style={{ margin: 0, fontSize: 28 }}>🎉 Payment successful</h1>
+//         <p style={{ marginTop: 8, color: "#444" }}>
+//           Finish setting up your account so we can unlock premium in the app.
+//         </p>
+
+//         <form
+//           onSubmit={handleSubmit}
+//           style={{
+//             display: "flex",
+//             flexDirection: "column",
+//             gap: 12,
+//             marginTop: 16,
+//           }}>
+//           <label style={{ display: "block" }}>
+//             <div style={{ marginBottom: 6 }}>Email</div>
+//             <input
+//               type="email"
+//               required
+//               autoComplete="email"
+//               inputMode="email"
+//               value={email}
+//               onChange={(e) => setEmail(e.target.value)}
+//               placeholder="you@example.com"
+//               style={{
+//                 width: "100%",
+//                 paddingTop: 12,
+//                 paddingBottom: 12,
+//                 borderRadius: 10,
+//                 border: "1px solid #ddd",
+//                 outline: "none",
+//               }}
+//             />
+//           </label>
+
+//           <label style={{ display: "block" }}>
+//             <div style={{ marginBottom: 6 }}>Password</div>
+//             <input
+//               type="password"
+//               required
+//               minLength={6}
+//               autoComplete="new-password"
+//               value={password}
+//               onChange={(e) => setPassword(e.target.value)}
+//               placeholder="minimum 6 characters"
+//               style={{
+//                 width: "100%",
+//                 paddingTop: 12,
+//                 paddingBottom: 12,
+//                 borderRadius: 10,
+//                 border: "1px solid #ddd",
+//                 outline: "none",
+//               }}
+//             />
+//           </label>
+
+//           <button
+//             type="submit"
+//             disabled={loading || !email || !password}
+//             style={{
+//               padding: "12px 16px",
+//               borderRadius: 12,
+//               border: "none",
+//               background: loading ? "#444" : "#111",
+//               opacity: loading ? 0.85 : 1,
+//               color: "white",
+//               fontWeight: 600,
+//               cursor: loading ? "not-allowed" : "pointer",
+//               marginTop: 4,
+//             }}
+//             aria-busy={loading}>
+//             {loading ? "Preparing…" : "Create account / Sign in"}
+//           </button>
+
+//           {error && (
+//             <p style={{ color: "crimson", marginTop: 4 }} role="alert">
+//               {error}
+//             </p>
+//           )}
+//         </form>
+
+//         {userId && (
+//           <div
+//             style={{
+//               marginTop: 24,
+//               padding: 16,
+//               border: "1px solid #eee",
+//               borderRadius: 12,
+//               background: "#fbfdfc",
+//             }}>
+//             <h3 style={{ marginTop: 0 }}>Open the app</h3>
+//             <p style={{ marginTop: 4, color: "#444" }}>
+//               We’ll unlock premium automatically.
+//             </p>
+
+//             {(() => {
+//               // Preserve marketing params
+//               const params = new URLSearchParams(window.location.search);
+//               params.set("app_user_id", userId);
+
+//               const appStoreBase =
+//                 "https://flexy-pilates.superwall.app/afterOnboardingPaywall";
+
+//               const fullUrl = `${appStoreBase}?${params.toString()}`;
+
+//               return (
+//                 <div
+//                   style={{
+//                     display: "flex",
+//                     gap: 12,
+//                     marginTop: 8,
+//                     flexWrap: "wrap",
+//                   }}>
+//                   <a
+//                     href={fullUrl}
+//                     style={{
+//                       padding: "10px 14px",
+//                       borderRadius: 10,
+//                       background: "#0f766e",
+//                       color: "#fff",
+//                       textDecoration: "none",
+//                       fontWeight: 600,
+//                     }}
+//                     target="_blank"
+//                     rel="noopener noreferrer">
+//                     Let's get Started!
+//                   </a>
+//                 </div>
+//               );
+//             })()}
+//           </div>
+//         )}
+//       </main>
+//     </div>
+//   );
+// }
+
 // pages/index.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -10,26 +275,61 @@ const supabase = createClient(
 type TokenResponse = { token: string; expiresAt: string };
 
 export default function ThankYou() {
+  // ── State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [attribution, setAttribution] = useState({
+    fbc: null as string | null,
+    fbp: null as string | null,
+    utm_source: null as string | null,
+    utm_medium: null as string | null,
+    utm_campaign: null as string | null,
+  });
 
+  // ── Attribution from query
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    console.debug("UTMs:", {
+    const fbclid = params.get("fbclid");
+    const ts = Date.now();
+
+    const fbc = fbclid ? `fb.1.${ts}.${fbclid}` : null;
+    const fbp = `fb.1.${ts}.${Math.floor(Math.random() * 1e16)}`;
+
+    setAttribution({
+      fbc,
+      fbp,
       utm_source: params.get("utm_source"),
       utm_medium: params.get("utm_medium"),
       utm_campaign: params.get("utm_campaign"),
-      fbclid: params.get("fbclid"),
+    });
+
+    console.debug("Attribution info:", {
+      fbc,
+      fbp,
+      utm_source: params.get("utm_source"),
+      utm_medium: params.get("utm_medium"),
+      utm_campaign: params.get("utm_campaign"),
     });
   }, []);
 
+  // ── Build deep link with preserved params
+  const startUrl = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (userId) params.set("app_user_id", userId);
+    const appStoreBase =
+      "https://flexy-pilates.superwall.app/afterOnboardingPaywall";
+    return `${appStoreBase}?${params.toString()}`;
+  }, [userId]);
+
+  // ── Auth submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email || !password || loading) return;
 
     setError(null);
     setLoading(true);
@@ -40,7 +340,6 @@ export default function ThankYou() {
         email,
         password,
       });
-
       if (!signIn.error) {
         uid = signIn.data.user?.id;
       } else {
@@ -58,16 +357,23 @@ export default function ThankYou() {
       if (!uid) throw new Error("Could not determine user id after auth.");
       setUserId(uid);
 
-      // // 4) Mint short-lived token via Supabase Edge Function
+      // 4) Persist attribution
+      await supabase.from("ad_attribution").upsert({
+        user_id: uid,
+        fbc: attribution.fbc,
+        fbp: attribution.fbp,
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+      });
+
+      // // 5) Optionally mint short-lived token
       // const { data, error: fnError } = await supabase.functions.invoke(
       //   "mint-app-link-token",
-      //   {
-      //     body: { userId: uid },
-      //   }
+      //   { body: { userId: uid } }
       // );
-
       // if (fnError) throw new Error(`Token API failed: ${fnError.message}`);
-      // setToken((data as { token: string }).token);
+      // setToken((data as TokenResponse).token);
     } catch (err: any) {
       setError(err?.message ?? "Something went wrong");
     } finally {
@@ -75,159 +381,285 @@ export default function ThankYou() {
     }
   };
 
+  // ── UI
   return (
-    <div
-      style={{
-        minHeight: "100svh",
-        display: "grid",
-        placeItems: "center",
-        padding: 16,
-        background: "#fafafa",
-        fontFamily:
-          "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-      }}>
-      <main
-        style={{
-          width: "100%",
-          maxWidth: 520,
-          background: "#fff",
-          border: "1px solid #eee",
-          borderRadius: 14,
-          padding: 24,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)",
-        }}>
-        <h1 style={{ margin: 0, fontSize: 28 }}>🎉 Payment successful</h1>
-        <p style={{ marginTop: 8, color: "#444" }}>
-          Finish setting up your account so we can unlock premium in the app.
-        </p>
+    <div style={styles.shell}>
+      {/* Background accent */}
+      <div style={styles.bgBlob} aria-hidden />
 
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-            marginTop: 16,
-          }}>
-          <label style={{ display: "block" }}>
-            <div style={{ marginBottom: 6 }}>Email</div>
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              inputMode="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              style={{
-                width: "100%",
-                paddingTop: 12,
-                paddingBottom: 12,
-                borderRadius: 10,
-                border: "1px solid #ddd",
-                outline: "none",
-              }}
-            />
-          </label>
-
-          <label style={{ display: "block" }}>
-            <div style={{ marginBottom: 6 }}>Password</div>
-            <input
-              type="password"
-              required
-              minLength={6}
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="minimum 6 characters"
-              style={{
-                width: "100%",
-                paddingTop: 12,
-                paddingBottom: 12,
-                borderRadius: 10,
-                border: "1px solid #ddd",
-                outline: "none",
-              }}
-            />
-          </label>
-
-          <button
-            type="submit"
-            disabled={loading || !email || !password}
-            style={{
-              padding: "12px 16px",
-              borderRadius: 12,
-              border: "none",
-              background: loading ? "#444" : "#111",
-              opacity: loading ? 0.85 : 1,
-              color: "white",
-              fontWeight: 600,
-              cursor: loading ? "not-allowed" : "pointer",
-              marginTop: 4,
-            }}
-            aria-busy={loading}>
-            {loading ? "Preparing…" : "Create account / Sign in"}
-          </button>
-
-          {error && (
-            <p style={{ color: "crimson", marginTop: 4 }} role="alert">
-              {error}
-            </p>
-          )}
-        </form>
-
-        {userId && (
-          <div
-            style={{
-              marginTop: 24,
-              padding: 16,
-              border: "1px solid #eee",
-              borderRadius: 12,
-              background: "#fbfdfc",
-            }}>
-            <h3 style={{ marginTop: 0 }}>Open the app</h3>
-            <p style={{ marginTop: 4, color: "#444" }}>
-              We’ll unlock premium automatically.
-            </p>
-
-            {(() => {
-              // Preserve marketing params
-              const params = new URLSearchParams(window.location.search);
-              params.set("app_user_id", userId);
-
-              const appStoreBase =
-                "https://flexy-pilates.superwall.app/afterOnboardingPaywall";
-
-              const fullUrl = `${appStoreBase}?${params.toString()}`;
-
-              return (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 12,
-                    marginTop: 8,
-                    flexWrap: "wrap",
-                  }}>
-                  <a
-                    href={fullUrl}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      background: "#0f766e",
-                      color: "#fff",
-                      textDecoration: "none",
-                      fontWeight: 600,
-                    }}
-                    target="_blank"
-                    rel="noopener noreferrer">
-                    Let's get Started!
-                  </a>
-                </div>
-              );
-            })()}
+      <main style={styles.card}>
+        <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={styles.emojiBadge} aria-hidden>
+            🎉
           </div>
+          <div>
+            <h1 style={styles.h1}>Payment successful</h1>
+            <p style={styles.subtle}>
+              {userId
+                ? "You’re all set. Unlock is ready in the app."
+                : "Finish setting up your account to unlock premium in the app."}
+            </p>
+          </div>
+        </header>
+
+        {/* SUCCESS STATE — replaces inputs once userId exists */}
+        {userId ? (
+          <section style={{ marginTop: 16 }}>
+            <div style={styles.successBox}>
+              <p style={{ margin: 0 }}>
+                Signed in as <strong>{email || "your account"}</strong>. Tap the
+                button to jump into the app.
+              </p>
+            </div>
+
+            <a
+              href={startUrl}
+              style={{
+                ...styles.primaryBtn,
+                marginTop: 16,
+              }}
+              target="_blank"
+              rel="noopener noreferrer">
+              Let’s get started
+            </a>
+
+            <p style={styles.tinyNote}>
+              Having trouble?{" "}
+              <button
+                type="button"
+                onClick={() => setUserId(null)}
+                style={styles.linkBtn}>
+                Switch account
+              </button>
+            </p>
+          </section>
+        ) : (
+          // FORM STATE — shown until we have userId
+          <form onSubmit={handleSubmit} style={styles.form}>
+            <label style={styles.label}>
+              <span style={styles.labelText}>Email</span>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                inputMode="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                style={styles.input}
+              />
+            </label>
+
+            <label style={styles.label}>
+              <span style={styles.labelText}>Password</span>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPw ? "text" : "password"}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
+                  style={{ ...styles.input, paddingRight: 44 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((s) => !s)}
+                  aria-label={showPw ? "Hide password" : "Show password"}
+                  style={styles.eyeBtn}>
+                  {showPw ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </label>
+
+            <button
+              type="submit"
+              disabled={loading || !email || !password}
+              style={{
+                ...styles.primaryBtn,
+                opacity: loading ? 0.9 : 1,
+                cursor: loading ? "not-allowed" : "pointer",
+                marginTop: 4,
+              }}
+              aria-busy={loading}>
+              {loading ? "Preparing…" : "Create account / Sign in"}
+            </button>
+
+            {error && (
+              <p style={styles.error} role="alert">
+                {error}
+              </p>
+            )}
+
+            <p style={styles.tinyNote}>
+              We’ll only use your email to create your account and secure
+              access. You can delete it anytime.
+            </p>
+          </form>
+        )}
+
+        {/* Optional token debug (kept for parity) */}
+        {token && (
+          <details style={{ marginTop: 12 }}>
+            <summary>Debug token</summary>
+            <code style={styles.code}>{token}</code>
+          </details>
         )}
       </main>
+
+      <footer style={styles.footer}>
+        <p style={styles.footerText}>
+          Need help? <a href="mailto:support@flexy.app">support@flexy.app</a>
+        </p>
+      </footer>
     </div>
   );
+}
+
+// ───────────────────────────────────────────
+// Styles (mobile-first, tap-friendly, subtle glow)
+// ───────────────────────────────────────────
+const styles: Record<string, React.CSSProperties> = {
+  shell: {
+    minHeight: "100svh",
+    display: "grid",
+    gridTemplateRows: "1fr auto",
+    alignItems: "center",
+    justifyItems: "center",
+    padding: 16,
+    background:
+      "radial-gradient(1200px 600px at 50% -10%, rgba(16,185,129,0.08), transparent), #fafafa",
+    fontFamily:
+      "Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
+  },
+  bgBlob: {
+    position: "fixed",
+    inset: 0,
+    pointerEvents: "none",
+    background:
+      "radial-gradient(600px 300px at 90% 10%, rgba(59,130,246,0.12), transparent)",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 520,
+    background: "#fff",
+    border: "1px solid #eee",
+    borderRadius: 16,
+    padding: 20,
+    boxShadow:
+      "0 1px 3px rgba(0,0,0,0.05), 0 12px 28px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
+  },
+  emojiBadge: {
+    display: "grid",
+    placeItems: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    background: "#f1f5f9",
+    border: "1px solid #e5e7eb",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
+  },
+  h1: { margin: 0, fontSize: 24, lineHeight: 1.2 },
+  subtle: { margin: 6, marginLeft: 0, color: "#475569", fontSize: 14 },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    marginTop: 16,
+  },
+  label: { display: "block" },
+  labelText: {
+    display: "block",
+    marginBottom: 6,
+    fontSize: 14,
+    color: "#0f172a",
+  },
+  input: {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    outline: "none",
+    fontSize: 16,
+    transition: "box-shadow 120ms ease, border 120ms ease",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
+  },
+  eyeBtn: {
+    position: "absolute",
+    right: 6,
+    top: 6,
+    height: 32,
+    minWidth: 32,
+    padding: "0 8px",
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    background: "#fff",
+    cursor: "pointer",
+  },
+  primaryBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    padding: "14px 16px",
+    borderRadius: 14,
+    border: "none",
+    background:
+      "linear-gradient(180deg, #111827, #0b1220) padding-box, linear-gradient(180deg, #10b981, #2563eb) border-box",
+    borderImageSlice: 1,
+    color: "white",
+    fontWeight: 700,
+    fontSize: 16,
+    textDecoration: "none",
+    boxShadow: "0 8px 20px rgba(16,185,129,0.25), 0 2px 6px rgba(0,0,0,0.12)",
+    transition: "transform 120ms ease",
+  },
+  error: { color: "crimson", marginTop: 6, fontSize: 14 },
+  tinyNote: {
+    marginTop: 8,
+    color: "#64748b",
+    fontSize: 12,
+    textAlign: "center",
+  },
+  successBox: {
+    padding: 12,
+    borderRadius: 12,
+    background: "#f8fdfb",
+    border: "1px solid #d1fae5",
+  },
+  code: {
+    display: "block",
+    marginTop: 8,
+    padding: 8,
+    borderRadius: 8,
+    background: "#0b1220",
+    color: "#e5e7eb",
+    overflowX: "auto",
+  },
+  linkBtn: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    color: "#0ea5e9",
+    textDecoration: "underline",
+    cursor: "pointer",
+    fontSize: 12,
+  },
+  footer: { marginTop: 16 },
+  footerText: { color: "#94a3b8", fontSize: 12, textAlign: "center" },
+};
+
+// Focus ring (quick and accessible)
+if (typeof document !== "undefined") {
+  const styleTagId = "focus-ring-style";
+  if (!document.getElementById(styleTagId)) {
+    const el = document.createElement("style");
+    el.id = styleTagId;
+    el.innerHTML = `
+      input:focus { border-color:#10b981 !important; box-shadow:0 0 0 4px rgba(16,185,129,0.18) !important; }
+      a:hover, button:hover { transform: translateY(-1px); }
+    `;
+    document.head.appendChild(el);
+  }
 }
