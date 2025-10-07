@@ -392,7 +392,7 @@ export default function ThankYou() {
             🎉
           </div>
           <div>
-            <h1 style={styles.h1}>Payment successful</h1>
+            <h1 style={styles.h1}>Get Your Plan!</h1>
             <p style={styles.subtle}>
               {userId
                 ? "You’re all set. Unlock is ready in the app."
@@ -510,6 +510,9 @@ export default function ThankYou() {
   );
 }
 
+// ───────────────────────────────────────────
+// Styles (fixed inputs overflowing on mobile)
+// ───────────────────────────────────────────
 const styles: Record<string, React.CSSProperties> = {
   shell: {
     minHeight: "100svh",
@@ -522,6 +525,7 @@ const styles: Record<string, React.CSSProperties> = {
       "radial-gradient(1200px 600px at 50% -10%, rgba(16,185,129,0.08), transparent), #fafafa",
     fontFamily:
       "Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
+    boxSizing: "border-box", // ✅ ensure children respect padding
   },
   bgBlob: {
     position: "fixed",
@@ -539,6 +543,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 20,
     boxShadow:
       "0 1px 3px rgba(0,0,0,0.05), 0 12px 28px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
+    boxSizing: "border-box",
+    overflow: "hidden", // ✅ prevent any visual spill
   },
   emojiBadge: {
     display: "grid",
@@ -549,11 +555,19 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#f1f5f9",
     border: "1px solid #e5e7eb",
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
+    flexShrink: 0,
   },
   h1: { margin: 0, fontSize: 24, lineHeight: 1.2 },
   subtle: { margin: 6, marginLeft: 0, color: "#475569", fontSize: 14 },
-  form: { display: "flex", flexDirection: "column", gap: 12, marginTop: 16 },
-  label: { display: "block" },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    marginTop: 16,
+    width: "100%",
+    boxSizing: "border-box",
+  },
+  label: { display: "block", width: "100%" },
   labelText: {
     display: "block",
     marginBottom: 6,
@@ -562,6 +576,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   input: {
     width: "100%",
+    boxSizing: "border-box", // ✅ ensures padding stays inside
     padding: "12px 14px",
     borderRadius: 12,
     border: "1px solid #e2e8f0",
@@ -569,6 +584,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 16,
     transition: "box-shadow 120ms ease, border 120ms ease",
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
+    background: "#fff",
   },
   eyeBtn: {
     position: "absolute",
@@ -599,6 +615,7 @@ const styles: Record<string, React.CSSProperties> = {
     textDecoration: "none",
     boxShadow: "0 8px 20px rgba(16,185,129,0.25), 0 2px 6px rgba(0,0,0,0.12)",
     transition: "transform 120ms ease",
+    boxSizing: "border-box",
   },
   error: { color: "crimson", marginTop: 6, fontSize: 14 },
   tinyNote: {
@@ -612,6 +629,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 12,
     background: "#f8fdfb",
     border: "1px solid #d1fae5",
+    boxSizing: "border-box",
   },
   code: {
     display: "block",
@@ -634,17 +652,3 @@ const styles: Record<string, React.CSSProperties> = {
   footer: { marginTop: 16 },
   footerText: { color: "#94a3b8", fontSize: 12, textAlign: "center" },
 };
-
-// Add a focus style only in the browser
-if (typeof document !== "undefined") {
-  const styleTagId = "focus-ring-style";
-  if (!document.getElementById(styleTagId)) {
-    const el = document.createElement("style");
-    el.id = styleTagId;
-    el.innerHTML = `
-      input:focus { border-color:#10b981 !important; box-shadow:0 0 0 4px rgba(16,185,129,0.18) !important; }
-      a:hover, button:hover { transform: translateY(-1px); }
-    `;
-    document.head.appendChild(el);
-  }
-}
