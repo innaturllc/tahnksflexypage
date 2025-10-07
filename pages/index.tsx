@@ -678,7 +678,8 @@ export default function ThankYou() {
 
       <footer style={styles.footer}>
         <p style={styles.footerText}>
-          Need help? <a href="mailto:support@flexy.app">support@flexy.app</a>
+          Need help?{" "}
+          <a href="mailto:support@innaturll.com">support@innaturll.com</a>
         </p>
       </footer>
     </div>
