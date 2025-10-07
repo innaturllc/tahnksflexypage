@@ -572,7 +572,7 @@ export default function ThankYou() {
             🎉
           </div>
           <div>
-            <h1 style={styles.h1}>Get Your Plan!</h1>
+            <h1 style={styles.h1}>Start Your Pilates Journey!</h1>
             <p style={styles.subtle}>
               {userId
                 ? "You’re all set. Unlock is ready in the app."
