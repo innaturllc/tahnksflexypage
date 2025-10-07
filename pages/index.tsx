@@ -662,6 +662,9 @@ export default function ThankYou() {
               We’ll only use your email to create your account and secure
               access. You can delete it anytime.
             </p>
+            <p style={styles.tinyNote}>
+              Use the same account credentials to log in on all your devices.
+            </p>
           </form>
         )}
 
