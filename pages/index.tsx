@@ -1,6 +1,7 @@
 // // pages/index.tsx
 // import { useEffect, useMemo, useState } from "react";
 // import { createClient } from "@supabase/supabase-js";
+// import mod from "mixpanel-browser";
 
 // const supabase = createClient(
 //   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,7 +13,26 @@
 
 // type TokenResponse = { token: string; expiresAt: string };
 
+// // ───────────────────────────────────────────
+// // Mixpanel (browser) - safe, lazy client init
+// // ───────────────────────────────────────────
+
+// async function ensureMixpanel() {
+//   const token = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN || "";
+//   if (!token) {
+//     if (process.env.NODE_ENV !== "production") {
+//       console.warn("[Mixpanel] Missing NEXT_PUBLIC_MIXPANEL_TOKEN");
+//     }
+//   }
+//   mod.init(token, {
+//     debug: process.env.NODE_ENV !== "production",
+//     track_pageview: true,
+//   });
+//   return mod;
+// }
+
 // export default function ThankYou() {
+//   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 //   const [email, setEmail] = useState("");
 //   const [password, setPassword] = useState("");
 //   const [showPw, setShowPw] = useState(false);
@@ -50,13 +70,15 @@
 //       utm_campaign: params.get("utm_campaign"),
 //     });
 
-//     console.debug("Attribution info:", {
-//       fbc,
-//       fbp,
-//       utm_source: params.get("utm_source"),
-//       utm_medium: params.get("utm_medium"),
-//       utm_campaign: params.get("utm_campaign"),
-//     });
+//     if (process.env.NODE_ENV !== "production") {
+//       console.debug("Attribution info:", {
+//         fbc,
+//         fbp,
+//         utm_source: params.get("utm_source"),
+//         utm_medium: params.get("utm_medium"),
+//         utm_campaign: params.get("utm_campaign"),
+//       });
+//     }
 //   }, []);
 
 //   // ── Build deep link safely (no window during SSR)
@@ -75,17 +97,20 @@
 //     setLoading(true);
 //     try {
 //       let uid: string | undefined;
+//       let flow: "sign_in" | "sign_up" = "sign_in";
 
 //       const signIn = await supabase.auth.signInWithPassword({
 //         email,
 //         password,
 //       });
+
 //       if (!signIn.error) {
 //         uid = signIn.data.user?.id;
 //       } else {
 //         const signUp = await supabase.auth.signUp({ email, password });
 //         if (signUp.error) throw signUp.error;
 //         uid = signUp.data.user?.id;
+//         flow = "sign_up";
 //       }
 
 //       if (!uid) {
@@ -94,7 +119,6 @@
 //       }
 //       if (!uid) throw new Error("Could not determine user id after auth.");
 //       setUserId(uid);
-
 //       await supabase.from("ad_attribution").upsert({
 //         user_id: uid,
 //         fbc: attribution.fbc,
@@ -103,6 +127,30 @@
 //         utm_medium: attribution.utm_medium,
 //         utm_campaign: attribution.utm_campaign,
 //       });
+//       // ── Mixpanel: identify by user_id and track Signup Attempt
+//       const m = await ensureMixpanel();
+//       if (m) {
+//         try {
+//           // distinct_id = user_id
+//           m.identify(uid);
+//           // optional: set people profile fields (email)
+//           (m as any).people?.set?.({ $email: email });
+
+//           m.track("Signup Attempt", {
+//             flow, // "sign_in" | "sign_up"
+//             email, // useful for funnels (avoid PII in events if you prefer)
+//             utm_source: attribution.utm_source ?? undefined,
+//             utm_medium: attribution.utm_medium ?? undefined,
+//             utm_campaign: attribution.utm_campaign ?? undefined,
+//             fbc: attribution.fbc ?? undefined,
+//             fbp: attribution.fbp ?? undefined,
+//           });
+//         } catch (mpErr) {
+//           if (process.env.NODE_ENV !== "production") {
+//             console.warn("[Mixpanel] track error:", mpErr);
+//           }
+//         }
+//       }
 
 //       // // Optional token:
 //       // const { data, error: fnError } = await supabase.functions.invoke(
@@ -127,7 +175,7 @@
 //             🎉
 //           </div>
 //           <div>
-//             <h1 style={styles.h1}>Get Your Plan!</h1>
+//             <h1 style={styles.h1}>Start Your Pilates Journey!</h1>
 //             <p style={styles.subtle}>
 //               {userId
 //                 ? "You’re all set. Unlock is ready in the app."
@@ -225,6 +273,9 @@
 //               We’ll only use your email to create your account and secure
 //               access. You can delete it anytime.
 //             </p>
+//             <p style={styles.tinyNote}>
+//               Use the same account credentials to log in on all your devices.
+//             </p>
 //           </form>
 //         )}
 
@@ -238,7 +289,8 @@
 
 //       <footer style={styles.footer}>
 //         <p style={styles.footerText}>
-//           Need help? <a href="mailto:support@flexy.app">support@flexy.app</a>
+//           Need help?{" "}
+//           <a href="mailto:support@innaturll.com">support@innaturll.com</a>
 //         </p>
 //       </footer>
 //     </div>
@@ -246,7 +298,7 @@
 // }
 
 // // ───────────────────────────────────────────
-// // Styles (fixed inputs overflowing on mobile)
+// // Styles (unchanged)
 // // ───────────────────────────────────────────
 // const styles: Record<string, React.CSSProperties> = {
 //   shell: {
@@ -260,7 +312,7 @@
 //       "radial-gradient(1200px 600px at 50% -10%, rgba(16,185,129,0.08), transparent), #fafafa",
 //     fontFamily:
 //       "Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
-//     boxSizing: "border-box", // ✅ ensure children respect padding
+//     boxSizing: "border-box",
 //   },
 //   bgBlob: {
 //     position: "fixed",
@@ -279,7 +331,7 @@
 //     boxShadow:
 //       "0 1px 3px rgba(0,0,0,0.05), 0 12px 28px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
 //     boxSizing: "border-box",
-//     overflow: "hidden", // ✅ prevent any visual spill
+//     overflow: "hidden",
 //   },
 //   emojiBadge: {
 //     display: "grid",
@@ -311,7 +363,7 @@
 //   },
 //   input: {
 //     width: "100%",
-//     boxSizing: "border-box", // ✅ ensures padding stays inside
+//     boxSizing: "border-box",
 //     padding: "12px 14px",
 //     borderRadius: 12,
 //     border: "1px solid #e2e8f0",
@@ -364,7 +416,6 @@
 //     borderRadius: 12,
 //     background: "#f8fdfb",
 //     border: "1px solid #d1fae5",
-//     boxSizing: "border-box",
 //   },
 //   code: {
 //     display: "block",
@@ -393,6 +444,10 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import mod from "mixpanel-browser";
 
+// ✅ NEW: Meta Pixel helpers
+import { initMetaPixel, trackMeta, trackPageView } from "../lib/metaPixel";
+import MetaNoScript from "../components/MetaNoScript";
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -402,10 +457,6 @@ const APP_LINK_BASE =
   "https://flexy-pilates.superwall.app/afterOnboardingPaywall";
 
 type TokenResponse = { token: string; expiresAt: string };
-
-// ───────────────────────────────────────────
-// Mixpanel (browser) - safe, lazy client init
-// ───────────────────────────────────────────
 
 async function ensureMixpanel() {
   const token = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN || "";
@@ -429,7 +480,7 @@ export default function ThankYou() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [queryString, setQueryString] = useState<string>(""); // ✅ client-only query
+  const [queryString, setQueryString] = useState<string>("");
   const [attribution, setAttribution] = useState({
     fbc: null as string | null,
     fbp: null as string | null,
@@ -437,6 +488,20 @@ export default function ThankYou() {
     utm_medium: null as string | null,
     utm_campaign: null as string | null,
   });
+
+  // ✅ NEW: Init Meta Pixel + PageView (client only)
+  useEffect(() => {
+    const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID || "";
+    if (!pixelId) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[Meta Pixel] Missing NEXT_PUBLIC_META_PIXEL_ID");
+      }
+      return;
+    }
+    // If you want to use advanced matching later, pass an object as 2nd arg.
+    initMetaPixel(pixelId);
+    trackPageView();
+  }, []);
 
   // ── Client-only: read URL params and build attribution
   useEffect(() => {
@@ -470,7 +535,6 @@ export default function ThankYou() {
     }
   }, []);
 
-  // ── Build deep link safely (no window during SSR)
   const startUrl = useMemo(() => {
     const params = new URLSearchParams(queryString || "");
     if (userId) params.set("app_user_id", userId);
@@ -508,6 +572,7 @@ export default function ThankYou() {
       }
       if (!uid) throw new Error("Could not determine user id after auth.");
       setUserId(uid);
+
       await supabase.from("ad_attribution").upsert({
         user_id: uid,
         fbc: attribution.fbc,
@@ -516,18 +581,16 @@ export default function ThankYou() {
         utm_medium: attribution.utm_medium,
         utm_campaign: attribution.utm_campaign,
       });
-      // ── Mixpanel: identify by user_id and track Signup Attempt
+
+      // ── Mixpanel
       const m = await ensureMixpanel();
       if (m) {
         try {
-          // distinct_id = user_id
           m.identify(uid);
-          // optional: set people profile fields (email)
           (m as any).people?.set?.({ $email: email });
-
           m.track("Signup Attempt", {
-            flow, // "sign_in" | "sign_up"
-            email, // useful for funnels (avoid PII in events if you prefer)
+            flow,
+            email,
             utm_source: attribution.utm_source ?? undefined,
             utm_medium: attribution.utm_medium ?? undefined,
             utm_campaign: attribution.utm_campaign ?? undefined,
@@ -541,7 +604,19 @@ export default function ThankYou() {
         }
       }
 
-      // // Optional token:
+      // ✅ NEW: Meta Pixel "CompleteRegistration" *only* on sign_up
+      if (flow === "sign_up") {
+        // Do NOT send internal userId. Keep params generic.
+        trackMeta("CompleteRegistration", {
+          // Optional parameters you may include:
+          // value: 0.0,
+          // currency: "USD",
+          // status: "success",
+          // fb_cookie_fbc/fbp are auto via the pixel; no need to pass here.
+        });
+      }
+
+      // // Optional: mint deep-link token
       // const { data, error: fnError } = await supabase.functions.invoke(
       //   "mint-app-link-token",
       //   { body: { userId: uid } }
@@ -555,8 +630,13 @@ export default function ThankYou() {
     }
   };
 
+  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID || "";
+
   return (
     <div style={styles.shell}>
+      {/* ✅ noscript fallback for PageView */}
+      {pixelId ? <MetaNoScript pixelId={pixelId} /> : null}
+
       <div style={styles.bgBlob} aria-hidden />
       <main style={styles.card}>
         <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -581,7 +661,6 @@ export default function ThankYou() {
                 button to jump into the app.
               </p>
             </div>
-
             <a
               href={startUrl}
               style={{ ...styles.primaryBtn, marginTop: 16 }}
@@ -589,7 +668,6 @@ export default function ThankYou() {
               rel="noopener noreferrer">
               Let’s get started
             </a>
-
             <p style={styles.tinyNote}>
               Having trouble?{" "}
               <button
@@ -602,6 +680,7 @@ export default function ThankYou() {
           </section>
         ) : (
           <form onSubmit={handleSubmit} style={styles.form}>
+            {/* ... your existing form unchanged ... */}
             <label style={styles.label}>
               <span style={styles.labelText}>Email</span>
               <input
@@ -686,9 +765,6 @@ export default function ThankYou() {
   );
 }
 
-// ───────────────────────────────────────────
-// Styles (unchanged)
-// ───────────────────────────────────────────
 const styles: Record<string, React.CSSProperties> = {
   shell: {
     minHeight: "100svh",
