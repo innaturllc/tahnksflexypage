@@ -14,7 +14,7 @@ module.exports = {
       {
         source: "/:path*",
         headers: [
-          { key: "X-Forwarded-Host", value: "thnksflexypage.vercel.app" },
+          { key: "X-Forwarded-Host", value: "flexy-pilates.com" },
           { key: "X-Forwarded-Proto", value: "https" },
         ],
       },

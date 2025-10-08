@@ -453,8 +453,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const APP_LINK_BASE =
-  "https://flexy-pilates.superwall.app/afterOnboardingPaywall";
+const APP_LINK_BASE = "https://flexy-pilates.com/afterOnboardingPaywall";
 
 type TokenResponse = { token: string; expiresAt: string };
 
