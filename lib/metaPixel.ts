@@ -2,7 +2,7 @@
 
 type FbqFn = ((...args: any[]) => void) & {
   callMethod?: (...args: any[]) => void;
-  queue?: any[];
+  queue?: any[][];
   loaded?: boolean;
   version?: string;
   push?: any;
@@ -22,12 +22,14 @@ function ensureFbqBootstrapped() {
 
   (function (f: any, b: Document, e: string, v: string) {
     if (f.fbq) return;
-    let n: FbqFn = function (this: any) {
-      // @ts-ignore
-      n.callMethod
-        ? n.callMethod.apply(n, arguments)
-        : n.queue!.push(arguments);
-    } as any;
+
+    const n: FbqFn = ((...args: any[]) => {
+      if (n.callMethod) {
+        n.callMethod.apply(n, args);
+      } else {
+        n.queue!.push(args);
+      }
+    }) as any;
 
     f.fbq = n;
     if (!f._fbq) f._fbq = n;
