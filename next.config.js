@@ -1,12 +1,15 @@
 /** @type {import('next').NextConfig} */
 module.exports = {
   async rewrites() {
-    return [
-      {
-        source: "/:path*",
-        destination: "https://flexy-pilates.superwall.app/:path*", // external URL
-      },
-    ];
+    // Serve local routes and static files first, then proxy everything else
+    return {
+      fallback: [
+        {
+          source: "/:path*",
+          destination: "https://flexy-pilates.superwall.app/:path*", // external URL
+        },
+      ],
+    };
   },
   // (optional) if Superwall sets CSP or needs forwarded headers:
   async headers() {
