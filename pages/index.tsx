@@ -607,13 +607,7 @@ export default function ThankYou() {
       // ✅ NEW: Meta Pixel "CompleteRegistration" *only* on sign_up
       if (flow === "sign_up") {
         // Do NOT send internal userId. Keep params generic.
-        trackMeta("CompleteRegistration", {
-          // Optional parameters you may include:
-          // value: 0.0,
-          // currency: "USD",
-          // status: "success",
-          // fb_cookie_fbc/fbp are auto via the pixel; no need to pass here.
-        });
+        trackMeta("CompleteRegistration");
       }
 
       // // Optional: mint deep-link token
